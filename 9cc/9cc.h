@@ -12,6 +12,7 @@ typedef enum {
   ND_ASSIGN,  // =
   ND_LVAR,    // Local variable
   ND_NUM,     // Number
+  ND_RETURN,  // return
 } NodeKind;
 
 typedef struct Node Node;

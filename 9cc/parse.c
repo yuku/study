@@ -14,6 +14,7 @@ typedef enum {
   TK_IDENT,     // Identifier
   TK_NUM,       // Integer token
   TK_EOF,       // End of input
+  TK_RETURN,    // Return
 } TokenKind;
 
 typedef struct Token Token;
@@ -59,6 +60,13 @@ bool startswith(char *p, char *q) {
 }
 
 /**
+ * Isidentchar returns true if the given char can be used in identifier.
+ */
+bool isidentchar(char c) {
+  return isalnum(c) || c == '_';
+}
+
+/**
  * Tokenize tokenizes the given `p` and returns it.
  */
 void tokenize() {
@@ -74,10 +82,16 @@ void tokenize() {
       continue;
     }
 
+    if (startswith(p, "return") && !isidentchar(*(p + 6))) {
+      cur = new_token(TK_RETURN, cur, p, 6);
+      p += 6;
+      continue;
+    }
+
     if (isalpha(*p) || *p == '_') {
       cur = new_token(TK_IDENT, cur, p, 0);
       char *q = p;
-      while (isalpha(*p) || isdigit(*p) || *p == '_') {
+      while (isidentchar(*p)) {
         p++;
       }
       cur->len = p - q;
@@ -144,8 +158,12 @@ void error(char *fmt, ...) {
  * char equals the current string. Otherwise it returns false.
  */
 bool consume(char *op) {
-  if (token->kind != TK_RESERVED ||
-      strlen(op) != token->len ||
+  if (token->kind == TK_IDENT ||
+      token->kind == TK_NUM ||
+      token->kind == TK_EOF) {
+    return false;
+  }
+  if (strlen(op) != token->len ||
       memcmp(token->str, op, token->len)) {
     return false;
   }
@@ -171,12 +189,9 @@ Token *consume_ident() {
  * current string. Otherwise it reports an error then exits.
  */
 void expect(char *op) {
-  if (token->kind != TK_RESERVED ||
-      strlen(op) != token->len ||
-      memcmp(token->str, op, token->len)) {
-    error_at(token->str, "Current char is not equal to '%c", op);
+  if (!consume(op)) {
+    error_at(token->str, "Current char is not equal to '%s'", op);
   }
-  token = token->next;
 }
 
 /**
@@ -348,7 +363,16 @@ Node *expr() {
 
 // stmt = expr ";"
 Node *stmt() {
-  Node *node = expr();
+  Node *node;
+  
+  if (consume("return")) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_RETURN;
+    node->lhs = expr();
+  } else {
+    node = expr();
+  }
+
   expect(";");
   return node;
 }
