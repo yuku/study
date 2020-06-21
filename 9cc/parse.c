@@ -14,9 +14,10 @@ typedef enum {
   TK_IDENT,     // Identifier
   TK_NUM,       // Integer token
   TK_EOF,       // End of input
-  TK_RETURN,    // Return
-  TK_IF,        // If
-  TK_ELSE,      // Else
+  TK_RETURN,    // return
+  TK_IF,        // if
+  TK_ELSE,      // else
+  TK_WHILE,     // while
 } TokenKind;
 
 typedef struct Token Token;
@@ -99,6 +100,12 @@ void tokenize() {
     if (startswith(p, "else") && !isidentchar(*(p + 4))) {
       cur = new_token(TK_ELSE, cur, p, 4);
       p += 4;
+      continue;
+    }
+
+    if (startswith(p, "while") && !isidentchar(*(p + 5))) {
+      cur = new_token(TK_WHILE, cur, p, 5);
+      p += 5;
       continue;
     }
 
@@ -379,6 +386,7 @@ Node *expr() {
 // stmt = expr ";"
 //      | "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
+//      | "while" "(" expr ")" stmt
 Node *stmt() {
   Node *node;
   
@@ -400,6 +408,16 @@ Node *stmt() {
     if (consume("else")) {
       node->rhs = stmt();
     }
+    return node;
+  }
+
+  if (consume("while")) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_WHILE;
+    expect("(");
+    node->cond = expr();
+    expect(")");
+    node->lhs = stmt();
     return node;
   }
 
