@@ -22,6 +22,9 @@ assert 9 "a = 0; while (a < 9) a = a + 1; return a;"
 assert 10 "a = 10; while (a < 5) a = 3; return a;"
 assert 10 "for (a = 0; a < 10; a = a + 1) 1; return a;"
 
+assert 1 "if (0) { return 2; } else {} return 1;"
+assert 10 "for (a = 0; a < 10; a = a + 1) {} return a;"
+
 assert 0 "0;"
 assert 42 "42;"
 assert 21 "5+20-4;"

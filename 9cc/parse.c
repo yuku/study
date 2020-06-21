@@ -135,7 +135,7 @@ void tokenize() {
       continue;
     }
 
-    if (strchr("+-*/()<>=;", *p)) {
+    if (strchr("+-*/(){}<>=;", *p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
@@ -391,12 +391,28 @@ Node *expr() {
 }
 
 // stmt = expr ";"
+//      | "{" stmt* "}"
 //      | "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
 //      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 Node *stmt() {
   Node *node;
+
+  if (consume("{")) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_BLOCK;
+
+    Node head;
+    head.next = NULL;
+    Node *cur = &head;
+    while (!consume("}")) {
+      cur->next = stmt();
+      cur = cur->next;
+    }
+    node->lhs = cur == &head ? NULL : head.next;
+    return node;
+  }
   
   if (consume("return")) {
     node = calloc(1, sizeof(Node));

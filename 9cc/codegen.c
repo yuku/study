@@ -86,6 +86,9 @@ void gen_node(Node *node) {
     printf("  jmp .Lbeginfor%d\n", c);
     printf(".Lendfor%d:\n", c);
     return;
+  case ND_BLOCK:
+    gen(node->lhs);
+    return;
   }
 
   gen_node(node->lhs);
