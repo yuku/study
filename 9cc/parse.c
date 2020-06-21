@@ -16,6 +16,7 @@ typedef enum {
   TK_EOF,       // End of input
   TK_RETURN,    // Return
   TK_IF,        // If
+  TK_ELSE,      // Else
 } TokenKind;
 
 typedef struct Token Token;
@@ -92,6 +93,12 @@ void tokenize() {
     if (startswith(p, "if") && !isidentchar(*(p + 2))) {
       cur = new_token(TK_IF, cur, p, 2);
       p += 2;
+      continue;
+    }
+
+    if (startswith(p, "else") && !isidentchar(*(p + 4))) {
+      cur = new_token(TK_ELSE, cur, p, 4);
+      p += 4;
       continue;
     }
 
@@ -371,7 +378,7 @@ Node *expr() {
 
 // stmt = expr ";"
 //      | "return" expr ";"
-//      | "if" "(" expr ")" stmt
+//      | "if" "(" expr ")" stmt ("else" stmt)?
 Node *stmt() {
   Node *node;
   
@@ -390,6 +397,9 @@ Node *stmt() {
     node->cond = expr();
     expect(")");
     node->lhs = stmt();
+    if (consume("else")) {
+      node->rhs = stmt();
+    }
     return node;
   }
 

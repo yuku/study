@@ -45,8 +45,16 @@ void gen(Node *node) {
     gen(node->cond);
     printf("  pop rax\n");
     printf("  cmp rax, 0\n");
-    printf("  je .Lend%d\n", c);
-    gen(node->lhs);
+    if (node->rhs) {
+      printf("  je .Lelse%d\n", c);
+      gen(node->lhs);
+      printf("  jmp .Lend%d\n", c);
+      printf(".Lelse%d:\n", c);
+      gen(node->rhs);
+    } else {
+      printf("  je .Lend%d\n", c);
+      gen(node->lhs);
+    }
     printf(".Lend%d:\n", c);
     return;
   }

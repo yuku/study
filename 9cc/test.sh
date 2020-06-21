@@ -17,6 +17,7 @@ assert() {
 }
 
 assert 2 "a=1;if(a==1)a=2;return a;"
+assert 2 "foo=1;if(foo==3)return 1;else return 2;"
 
 assert 0 "0;"
 assert 42 "42;"
