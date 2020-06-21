@@ -3,7 +3,7 @@
 #include "9cc.h"
 
 char *user_input;
-Node *code[100];
+Node *code;
 
 int main(int argc, char **argv) {
   if (argc != 2) {
@@ -27,14 +27,8 @@ int main(int argc, char **argv) {
   printf("  mov rbp, rsp\n");
   printf("  sub rsp, 208\n"); // 8 * 26
 
-  for (int i = 0; code[i]; i++) {
-    gen(code[i]);
+  gen(code);
 
-    // After evaluating expression, a value is left on the
-    // top of the stack. Pop it to avoid stack overflow.
-    printf("  pop rax\n");
-  }
-  
   // Epilogue
   printf("  mov rsp, rbp\n");
   printf("  pop rbp\n");

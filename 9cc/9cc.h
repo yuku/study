@@ -22,6 +22,7 @@ typedef struct Node Node;
 
 struct Node {
   NodeKind kind;  // Node kind
+  Node *next;     // Next node
   Node *lhs;      // Left-hand side
   Node *rhs;      // Right-hand side
   Node *init;     // Initialize expression if kind is ND_FOR
@@ -34,7 +35,7 @@ struct Node {
 // Input program
 extern char *user_input;
 
-extern Node *code[100];
+extern Node *code;
 
 void error(char *fmt, ...);
 void tokenize();

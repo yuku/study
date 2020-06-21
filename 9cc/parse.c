@@ -458,9 +458,13 @@ Node *stmt() {
 void program() {
   locals = calloc(1, sizeof(LVar));
 
-  int i = 0;
+  Node head;
+  head.next = NULL;
+  Node *cur = &head;
+
   while (!at_eof()) {
-    code[i++] = stmt();
+    cur->next = stmt();
+    cur = cur->next;
   }
-  code[i] = NULL;
+  code = head.next;
 }

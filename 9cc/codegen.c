@@ -14,7 +14,7 @@ void gen_lval(Node *node) {
   printf("  push rax\n");
 }
 
-void gen(Node *node) {
+void gen_node(Node *node) {
   if (!node) {
     return;
   }
@@ -33,63 +33,63 @@ void gen(Node *node) {
     return;
   case ND_ASSIGN:
     gen_lval(node->lhs);
-    gen(node->rhs);
+    gen_node(node->rhs);
     printf("  pop rdi\n");
     printf("  pop rax\n");
     printf("  mov [rax], rdi\n");
     printf("  push rdi\n");
     return;
   case ND_RETURN:
-    gen(node->lhs);
+    gen_node(node->lhs);
     printf("  pop rax\n");
     printf("  mov rsp, rbp\n");
     printf("  pop rbp\n");
     printf("  ret\n");
     return;
   case ND_IF:
-    gen(node->cond);
+    gen_node(node->cond);
     printf("  pop rax\n");
     printf("  cmp rax, 0\n");
     if (node->rhs) {
       printf("  je .Lelse%d\n", c);
-      gen(node->lhs);
-      printf("  jmp .Lend%d\n", c);
+      gen_node(node->lhs);
+      printf("  jmp .Lendif%d\n", c);
       printf(".Lelse%d:\n", c);
-      gen(node->rhs);
+      gen_node(node->rhs);
     } else {
-      printf("  je .Lend%d\n", c);
-      gen(node->lhs);
+      printf("  je .Lendif%d\n", c);
+      gen_node(node->lhs);
     }
-    printf(".Lend%d:\n", c);
+    printf(".Lendif%d:\n", c);
     return;
   case ND_WHILE:
-    printf(".Lbegin%d:\n", c);
-    gen(node->cond);
+    printf(".Lbeginwhile%d:\n", c);
+    gen_node(node->cond);
     printf("  pop rax\n");
     printf("  cmp rax, 0\n");
-    printf("  je .Lend%d\n", c);
-    gen(node->lhs);
-    printf("  jmp .Lbegin%d\n", c);
-    printf(".Lend%d:\n", c);
+    printf("  je .Lendwhile%d\n", c);
+    gen_node(node->lhs);
+    printf("  jmp .Lbeginwhile%d\n", c);
+    printf(".Lendwhile%d:\n", c);
     return;
   case ND_FOR:
-    gen(node->init);
-    printf(".Lbegin%d:\n", c);
+    gen_node(node->init);
+    printf(".Lbeginfor%d:\n", c);
     if (node->cond) {
-      gen(node->cond);
+      gen_node(node->cond);
       printf("  pop rax\n");
       printf("  cmp rax, 0\n");
-      printf("  je .Lend%d\n", c);
+      printf("  je .Lendfor%d\n", c);
     }
-    gen(node->lhs);
-    gen(node->update);
-    printf("  jmp .Lbegin%d\n", c);
-    printf(".Lend%d:\n", c);
+    gen_node(node->lhs);
+    gen_node(node->update);
+    printf("  jmp .Lbeginfor%d\n", c);
+    printf(".Lendfor%d:\n", c);
     return;
   }
 
-  gen(node->lhs);
-  gen(node->rhs);
+  gen_node(node->lhs);
+  gen_node(node->rhs);
 
   printf("  pop rdi\n");
   printf("  pop rax\n");
@@ -131,4 +131,16 @@ void gen(Node *node) {
   }
 
   printf("  push rax\n");
+}
+
+/**
+ * Gen outputs assembly to stdout for given node. 
+ */
+void gen(Node *node) {
+  for (; node; node = node->next) {
+    gen_node(node);
+    // After evaluating expression, a value is left on the
+    // top of the stack. Pop it to avoid stack overflow.
+    printf("  pop rax\n");
+  }
 }
