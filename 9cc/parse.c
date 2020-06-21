@@ -18,6 +18,7 @@ typedef enum {
   TK_IF,        // if
   TK_ELSE,      // else
   TK_WHILE,     // while
+  TK_FOR,       // for
 } TokenKind;
 
 typedef struct Token Token;
@@ -106,6 +107,12 @@ void tokenize() {
     if (startswith(p, "while") && !isidentchar(*(p + 5))) {
       cur = new_token(TK_WHILE, cur, p, 5);
       p += 5;
+      continue;
+    }
+
+    if (startswith(p, "for") && !isidentchar(*(p + 3))) {
+      cur = new_token(TK_FOR, cur, p, 3);
+      p += 3;
       continue;
     }
 
@@ -387,6 +394,7 @@ Node *expr() {
 //      | "return" expr ";"
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "while" "(" expr ")" stmt
+//      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 Node *stmt() {
   Node *node;
   
@@ -417,6 +425,26 @@ Node *stmt() {
     expect("(");
     node->cond = expr();
     expect(")");
+    node->lhs = stmt();
+    return node;
+  }
+
+  if (consume("for")) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_FOR;
+    expect("(");
+    if (!consume(";")) {
+      node->init = expr();
+      expect(";");
+    }
+    if (!consume(";")) {
+      node->cond = expr();
+      expect(";");
+    }
+    if (!consume(")")) {
+      node->update = expr();
+      expect(")");
+    }
     node->lhs = stmt();
     return node;
   }

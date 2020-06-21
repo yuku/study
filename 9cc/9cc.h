@@ -15,6 +15,7 @@ typedef enum {
   ND_RETURN,  // return
   ND_IF,      // if
   ND_WHILE,   // while
+  ND_FOR,     // for
 } NodeKind;
 
 typedef struct Node Node;
@@ -23,7 +24,9 @@ struct Node {
   NodeKind kind;  // Node kind
   Node *lhs;      // Left-hand side
   Node *rhs;      // Right-hand side
-  Node *cond;     // Condition expression if kind is ND_IF or ND_WHILE
+  Node *init;     // Initialize expression if kind is ND_FOR
+  Node *cond;     // Condition expression if kind is ND_IF, ND_WHILE or ND_FOR
+  Node *update;   // Update expression if kind is ND_FOR
   int val;        // Valud if kind is ND_NUM
   int offset;     // Offset from RBP
 };
