@@ -74,8 +74,13 @@ void tokenize() {
       continue;
     }
 
-    if ('a' <= *p && *p <= 'z') {
-      cur = new_token(TK_IDENT, cur, p++, 1);
+    if (isalpha(*p) || *p == '_') {
+      cur = new_token(TK_IDENT, cur, p, 0);
+      char *q = p;
+      while (isalpha(*p) || isdigit(*p) || *p == '_') {
+        p++;
+      }
+      cur->len = p - q;
       continue;
     }
 
@@ -109,6 +114,17 @@ void tokenize() {
 }
 
 // Parser
+
+typedef struct LVar LVar;
+
+struct LVar {
+  LVar *next;  // Next local variable or NULL
+  char *name;  // Variable name
+  int len;     // Length of the name
+  int offset;  // Offset from RBP
+};
+
+LVar *locals;
 
 /**
  * Error function reports error.
@@ -180,6 +196,18 @@ bool at_eof() {
   return token->kind == TK_EOF;
 }
 
+/**
+ * Find_lvar returns LVar which has the specified name. Otherwise, returns NULL.
+ */
+LVar *find_lvar(Token *tok) {
+  for (LVar *var = locals; var; var = var->next) {
+    if (var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
+      return var;
+    }
+  }
+  return NULL;
+}
+
 Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
@@ -195,13 +223,6 @@ Node *new_num(int val) {
   return node;
 }
 
-Node *new_lvar(int offset) {
-  Node *node = calloc(1, sizeof(Node));
-  node->kind = ND_LVAR;
-  node->offset = offset;
-  return node;
-}
-
 Node *expr();
 
 // primary = "(" expr ")" | num | ident
@@ -213,7 +234,19 @@ Node *primary() {
   }
   Token *tok = consume_ident();
   if (tok) {
-    Node *node = new_lvar((tok->str[0] - 'a' + 1) * 8);
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_LVAR;
+
+    LVar *lvar = find_lvar(tok);
+    if (!lvar) {
+      lvar = calloc(1, sizeof(LVar));
+      lvar->next = locals;
+      lvar->name = tok->str;
+      lvar->len = tok->len;
+      lvar->offset = locals->offset + 8;
+      locals = lvar;
+    }
+    node->offset = lvar->offset;
     return node;
   }
   return new_num(expect_number());
@@ -322,6 +355,8 @@ Node *stmt() {
 
 // program = stmt*
 void program() {
+  locals = calloc(1, sizeof(LVar));
+
   int i = 0;
   while (!at_eof()) {
     code[i++] = stmt();
