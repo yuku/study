@@ -2,6 +2,8 @@
 
 #include "9cc.h"
 
+int counter = 0;
+
 void gen_lval(Node *node) {
   if (node->kind != ND_LVAR) {
     error("Left value of assignment is not a variable");
@@ -38,6 +40,16 @@ void gen(Node *node) {
     printf("  pop rbp\n");
     printf("  ret\n");
     return;
+  case ND_IF: {
+    int c = counter++;
+    gen(node->cond);
+    printf("  pop rax\n");
+    printf("  cmp rax, 0\n");
+    printf("  je .Lend%d\n", c);
+    gen(node->lhs);
+    printf(".Lend%d:\n", c);
+    return;
+  }
   }
 
   gen(node->lhs);
