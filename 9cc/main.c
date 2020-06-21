@@ -2,7 +2,6 @@
 
 #include "9cc.h"
 
-Token *token;
 char *user_input;
 Node *code[100];
 

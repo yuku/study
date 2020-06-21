@@ -9,6 +9,26 @@
 
 // Tokenizer
 
+typedef enum {
+  TK_RESERVED,  // Reserved keywords
+  TK_IDENT,     // Identifier
+  TK_NUM,       // Integer token
+  TK_EOF,       // End of input
+} TokenKind;
+
+typedef struct Token Token;
+
+struct Token {
+  TokenKind kind;  // Token kind
+  Token *next;     // Next token
+  int val;         // value if kind is TK_NUM
+  char *str;       // Token string
+  int len;         // Token length
+};
+
+// Current token
+Token *token;
+
 void error_at(char *loc, char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
