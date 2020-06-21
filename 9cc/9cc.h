@@ -17,6 +17,7 @@ typedef enum {
   ND_WHILE,   // while
   ND_FOR,     // for
   ND_BLOCK,   // block
+  ND_CALL,    // function call
 } NodeKind;
 
 typedef struct Node Node;
@@ -29,8 +30,11 @@ struct Node {
   Node *init;     // Initialize expression if kind is ND_FOR
   Node *cond;     // Condition expression if kind is ND_IF, ND_WHILE or ND_FOR
   Node *update;   // Update expression if kind is ND_FOR
-  int val;        // Valud if kind is ND_NUM
+  int val;        // Value if kind is ND_NUM
   int offset;     // Offset from RBP
+
+  char* name;     // Function name
+  int len;        // Length of function name
 };
 
 // Input program

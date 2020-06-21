@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "9cc.h"
 
@@ -86,6 +87,13 @@ void gen_node(Node *node) {
     printf("  jmp .Lbeginfor%d\n", c);
     printf(".Lendfor%d:\n", c);
     return;
+  case ND_CALL: {
+    char name[33]; // funcname is shorter than 33 chars.
+    strncpy(name, node->name, node->len);
+    name[node->len] = '\0';
+    printf("  call %s\n", name);
+    return;
+  }
   case ND_BLOCK:
     gen(node->lhs);
     return;

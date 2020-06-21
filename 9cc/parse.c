@@ -269,7 +269,9 @@ Node *new_num(int val) {
 Node *expr();
 Node *stmt();
 
-// primary = "(" expr ")" | num | ident
+// primary = "(" expr ")"
+//         | num
+//         | ident ("(" ")")?
 Node *primary() {
   if (consume("(")) {
     Node *node = expr();
@@ -278,6 +280,20 @@ Node *primary() {
   }
   Token *tok = consume_ident();
   if (tok) {
+    if (consume("(")) {
+      // Function call.
+      Node *node = calloc(1, sizeof(Node));
+      node->kind = ND_CALL;
+      node->name = tok->str;
+      node->len = tok->len;
+      if (tok->len > 3) {
+        error_at(token->str - 2, "Too long function name");
+      }
+      expect(")");
+      return node;
+    }
+
+    // Local variable.
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_LVAR;
 
