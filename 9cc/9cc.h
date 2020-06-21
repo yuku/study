@@ -1,25 +1,13 @@
 #include <stdbool.h>
 
 typedef enum {
-  TK_RESERVED,  // Symbol
+  TK_RESERVED,  // Reserved keywords
+  TK_IDENT,     // Identifier
   TK_NUM,       // Integer token
   TK_EOF,       // End of input
 } TokenKind;
 
-typedef enum {
-  ND_ADD,  // +
-  ND_SUB,  // -
-  ND_MUL,  // *
-  ND_DIV,  // /
-  ND_EQ,   // ==
-  ND_NE,   // !=
-  ND_LT,   // <
-  ND_LE,   // <=
-  ND_NUM,  // number
-} NodeKind;
-
 typedef struct Token Token;
-typedef struct Node Node;
 
 struct Token {
   TokenKind kind;  // Token kind
@@ -29,11 +17,28 @@ struct Token {
   int len;         // Token length
 };
 
+typedef enum {
+  ND_ADD,     // +
+  ND_SUB,     // -
+  ND_MUL,     // *
+  ND_DIV,     // /
+  ND_EQ,      // ==
+  ND_NE,      // !=
+  ND_LT,      // <
+  ND_LE,      // <=
+  ND_ASSIGN,  // =
+  ND_LVAR,    // Local variable
+  ND_NUM,     // Number
+} NodeKind;
+
+typedef struct Node Node;
+
 struct Node {
   NodeKind kind;  // Node kind
   Node *lhs;      // Left-hand side
   Node *rhs;      // Right-hand side
   int val;        // Valud if kind is ND_NUM
+  int offset;     // Offset from RBP
 };
 
 // Current token
@@ -42,21 +47,9 @@ extern Token *token;
 // Input program
 extern char *user_input;
 
-void error_at(char *loc, char *fmt, ...);
+extern Node *code[100];
+
 void error(char *fmt, ...);
-bool consume(char *op);
-void expect(char *op);
-int expect_number();
-bool at_eof();
-Token *new_token(TokenKind kind, Token *cur, char *str, int len);
-Token *tokenize(char *p);
-Node *new_binary(NodeKind kind, Node *lhs, Node *rhs);
-Node *new_num(int val);
-Node *expr();
-Node *equality();
-Node *relational();
-Node *add();
-Node *mul();
-Node *unary();
-Node *primary();
+void tokenize();
+void program();
 void gen(Node *node);

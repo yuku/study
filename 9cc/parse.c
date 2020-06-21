@@ -7,6 +7,8 @@
 
 #include "9cc.h"
 
+// Tokenizer
+
 void error_at(char *loc, char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
@@ -19,6 +21,74 @@ void error_at(char *loc, char *fmt, ...) {
   fprintf(stderr, "\n");
   exit(1);
 }
+
+/**
+ * New_token creates a new token and connects it to the `cur`. 
+ */
+Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
+  Token *tok = calloc(1, sizeof(Token));
+  tok->kind = kind;
+  tok->str = str;
+  tok->len = len;
+  cur->next = tok;
+  return tok;
+}
+
+bool startswith(char *p, char *q) {
+  return memcmp(p, q, strlen(q)) == 0;
+}
+
+/**
+ * Tokenize tokenizes the given `p` and returns it.
+ */
+void tokenize() {
+  char *p = user_input;
+  Token head;
+  head.next = NULL;
+  Token *cur = &head;
+
+  while (*p) {
+    // Skip whitespace chars
+    if (isspace(*p)) {
+      p++;
+      continue;
+    }
+
+    if ('a' <= *p && *p <= 'z') {
+      cur = new_token(TK_IDENT, cur, p++, 1);
+      continue;
+    }
+
+    if (startswith(p, ">=") ||
+        startswith(p, "<=") ||
+        startswith(p, "!=") ||
+        startswith(p, "==")) {
+      cur = new_token(TK_RESERVED, cur, p, 2);
+      p += 2;
+      continue;
+    }
+
+    if (strchr("+-*/()<>=;", *p)) {
+      cur = new_token(TK_RESERVED, cur, p++, 1);
+      continue;
+    }
+
+    if (isdigit(*p)) {
+      cur = new_token(TK_NUM, cur, p, 0);
+      char *q = p;
+      cur->val = strtol(p, &p, 10);
+      cur->len = p - q;
+      continue;
+    }
+
+    error_at(p, "Cannot tokenize");
+  }
+
+  new_token(TK_EOF, cur, p, 0);
+  token = head.next;
+}
+
+// Parser
 
 /**
  * Error function reports error.
@@ -45,6 +115,19 @@ bool consume(char *op) {
   }
   token = token->next;
   return true;
+}
+
+/**
+ * Consume_ident returns the current token if it is an identifier.
+ */
+Token *consume_ident() {
+  Token *tok;
+  if (token->kind == TK_IDENT) {
+    tok = token;
+    token = token->next;
+    return tok;
+  }
+  return NULL;
 }
 
 /**
@@ -77,66 +160,6 @@ bool at_eof() {
   return token->kind == TK_EOF;
 }
 
-/**
- * New_token creates a new token and connects it to the `cur`. 
- */
-Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
-  Token *tok = calloc(1, sizeof(Token));
-  tok->kind = kind;
-  tok->str = str;
-  tok->len = len;
-  cur->next = tok;
-  return tok;
-}
-
-bool startswith(char *p, char *q) {
-  return memcmp(p, q, strlen(q)) == 0;
-}
-
-/**
- * Tokenize tokenizes the given `p` and returns it.
- */
-Token *tokenize(char *p) {
-  Token head;
-  head.next = NULL;
-  Token *cur = &head;
-
-  while (*p) {
-    // Skip whitespace chars
-    if (isspace(*p)) {
-      p++;
-      continue;
-    }
-
-    if (startswith(p, ">=") ||
-        startswith(p, "<=") ||
-        startswith(p, "!=") ||
-        startswith(p, "==")) {
-      cur = new_token(TK_RESERVED, cur, p, 2);
-      p += 2;
-      continue;
-    }
-
-    if (strchr("+-*/()<>", *p)) {
-      cur = new_token(TK_RESERVED, cur, p++, 1);
-      continue;
-    }
-
-    if (isdigit(*p)) {
-      cur = new_token(TK_NUM, cur, p, 0);
-      char *q = p;
-      cur->val = strtol(p, &p, 10);
-      cur->len = p - q;
-      continue;
-    }
-
-    error_at(p, "Cannot tokenize");
-  }
-
-  new_token(TK_EOF, cur, p, 0);
-  return head.next;
-}
-
 Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
@@ -152,20 +175,66 @@ Node *new_num(int val) {
   return node;
 }
 
-// expr = equality
-Node *expr() {
-  return equality();
+Node *new_lvar(int offset) {
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = ND_LVAR;
+  node->offset = offset;
+  return node;
 }
 
-// equality = relational ("==" relational | "!=" relational)*
-Node *equality() {
-  Node *node = relational();
+Node *expr();
+
+// primary = "(" expr ")" | num | ident
+Node *primary() {
+  if (consume("(")) {
+    Node *node = expr();
+    expect(")");
+    return node;
+  }
+  Token *tok = consume_ident();
+  if (tok) {
+    Node *node = new_lvar((tok->str[0] - 'a' + 1) * 8);
+    return node;
+  }
+  return new_num(expect_number());
+}
+
+// unary = ("+" | "-")? unary | primary
+Node *unary() {
+  if (consume("+")) {
+    return primary();
+  } else if (consume("-")) {
+    return new_binary(ND_SUB, new_num(0), primary());
+  } else {
+    return primary();
+  }
+}
+
+
+// mul = unary ("*" unary | "/" unary)*
+Node *mul() {
+  Node *node = unary();
 
   while (true) {
-    if (consume("==")) {
-      node = new_binary(ND_EQ, node, relational());
-    } else if (consume("!=")) {
-      node = new_binary(ND_NE, node, relational());
+    if (consume("*")) {
+      node = new_binary(ND_MUL, node, unary());
+    } else if (consume("/")) {
+      node = new_binary(ND_DIV, node, unary());
+    } else {
+      return node;
+    }
+  }
+}
+
+// add = mul ("+" mul | "-" mul)*
+Node *add() {
+  Node *node = mul();
+
+  while (true) {
+    if (consume("+")) {
+      node = new_binary(ND_ADD, node, mul());
+    } else if (consume("-")) {
+      node = new_binary(ND_SUB, node, mul());
     } else {
       return node;
     }
@@ -191,53 +260,51 @@ Node *relational() {
   }
 }
 
-// add = mul ("+" mul | "-" mul)*
-Node *add() {
-  Node *node = mul();
+// equality = relational ("==" relational | "!=" relational)*
+Node *equality() {
+  Node *node = relational();
 
   while (true) {
-    if (consume("+")) {
-      node = new_binary(ND_ADD, node, mul());
-    } else if (consume("-")) {
-      node = new_binary(ND_SUB, node, mul());
+    if (consume("==")) {
+      node = new_binary(ND_EQ, node, relational());
+    } else if (consume("!=")) {
+      node = new_binary(ND_NE, node, relational());
     } else {
       return node;
     }
   }
 }
 
-// mul = unary ("*" unary | "/" unary)*
-Node *mul() {
-  Node *node = unary();
+// assign = equality ("=" assign)?
+Node *assign() {
+  Node *node = equality();
 
   while (true) {
-    if (consume("*")) {
-      node = new_binary(ND_MUL, node, unary());
-    } else if (consume("/")) {
-      node = new_binary(ND_DIV, node, unary());
+    if (consume("=")) {
+      node = new_binary(ND_ASSIGN, node, assign());
     } else {
       return node;
     }
   }
 }
 
-// unary = ("+" | "-")? unary | primary
-Node *unary() {
-  if (consume("+")) {
-    return primary();
-  } else if (consume("-")) {
-    return new_binary(ND_SUB, new_num(0), primary());
-  } else {
-    return primary();
-  }
+// expr = assign
+Node *expr() {
+  return assign();
 }
 
-// primary = "(" expr ")" | num
-Node *primary() {
-  if (consume("(")) {
-    Node *node = expr();
-    expect(")");
-    return node;
+// stmt = expr ";"
+Node *stmt() {
+  Node *node = expr();
+  expect(";");
+  return node;
+}
+
+// program = stmt*
+void program() {
+  int i = 0;
+  while (!at_eof()) {
+    code[i++] = stmt();
   }
-  return new_num(expect_number());
+  code[i] = NULL;
 }
