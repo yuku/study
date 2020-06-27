@@ -88,12 +88,18 @@ void gen_node(Node *node) {
     printf(".Lendfor%d:\n", c);
     return;
   case ND_CALL: {
+    gen_node(node->lhs); // arguments
     char name[33]; // funcname is shorter than 33 chars.
     strncpy(name, node->name, node->len);
     name[node->len] = '\0';
     printf("  call %s\n", name);
     return;
   }
+  case ND_ARGS:
+    // gen_node(node->rhs);
+    gen_node(node->lhs);
+    printf("  pop rdi\n");
+    return;
   case ND_BLOCK:
     gen(node->lhs);
     return;

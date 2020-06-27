@@ -135,7 +135,7 @@ void tokenize() {
       continue;
     }
 
-    if (strchr("+-*/(){}<>=;", *p)) {
+    if (strchr("+-*/(){}<>=;,", *p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
@@ -269,9 +269,21 @@ Node *new_num(int val) {
 Node *expr();
 Node *stmt();
 
+// args = expr ("," args)
+Node *args() {
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = ND_ARGS;
+  node->lhs = expr();
+
+  if (consume(",")) {
+    node->rhs = args();
+  }
+  return node;
+}
+
 // primary = "(" expr ")"
 //         | num
-//         | ident ("(" ")")?
+//         | ident ("(" args? ")")?
 Node *primary() {
   if (consume("(")) {
     Node *node = expr();
@@ -286,9 +298,16 @@ Node *primary() {
       node->kind = ND_CALL;
       node->name = tok->str;
       node->len = tok->len;
-      if (tok->len > 3) {
+      if (tok->len > 32) {
         error_at(token->str - 2, "Too long function name");
       }
+
+      if (consume(")")) {
+        // Without arguments
+        return node;
+      }
+
+      node->lhs = args();
       expect(")");
       return node;
     }
