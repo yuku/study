@@ -1,5 +1,38 @@
 #include <stdbool.h>
 
+// tokenize.c
+
+typedef enum {
+  TK_RESERVED,  // Reserved keywords
+  TK_IDENT,     // Identifier
+  TK_NUM,       // Integer token
+  TK_EOF,       // End of input
+  TK_RETURN,    // return
+  TK_IF,        // if
+  TK_ELSE,      // else
+  TK_WHILE,     // while
+  TK_FOR,       // for
+} TokenKind;
+
+typedef struct Token Token;
+
+struct Token {
+  TokenKind kind;  // Token kind
+  Token *next;     // Next token
+  int val;         // value if kind is TK_NUM
+  char *str;       // Token string
+  int len;         // Token length
+};
+
+void error(char *fmt, ...);
+void error_at(char *loc, char *fmt, ...);
+void tokenize();
+
+// Current token
+extern Token *token;
+
+// parse.c
+
 typedef enum {
   ND_ADD,     // +
   ND_SUB,     // -
@@ -43,7 +76,5 @@ extern char *user_input;
 
 extern Node *code;
 
-void error(char *fmt, ...);
-void tokenize();
 void program();
 void gen(Node *node);
