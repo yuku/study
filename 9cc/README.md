@@ -17,10 +17,10 @@ docker run --rm -it -v $PWD:/9cc -w /9cc 9ccdev
 ### Test Function Call
 
 ```bash
-./9cc 'foo(1);' > tmpmain.s
+./9cc 'foo(1, 2);' > tmpmain.s
 cat <<EOF > tmpfoo.c
 #include <stdio.h>
-int foo(int a) { printf("OK %d\n", a); }
+int foo(int a, int b) { printf("%d + %d * 2 = %d\n", a, b, a + b * 2); }
 EOF
 cc -o tmp tmpfoo.c tmpmain.s
 ./tmp
