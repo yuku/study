@@ -85,19 +85,22 @@ LVar *find_lvar(Token *tok) {
   return NULL;
 }
 
+Node *new_node(NodeKind kind) {
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = kind;
+  return node;
+}
 
 
 Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
-  Node *node = calloc(1, sizeof(Node));
-  node->kind = kind;
+  Node *node = new_node(kind);
   node->lhs = lhs;
   node->rhs = rhs;
   return node;
 }
 
 Node *new_num(int val) {
-  Node *node = calloc(1, sizeof(Node));
-  node->kind = ND_NUM;
+  Node *node = new_node(ND_NUM);
   node->val = val;
   return node;
 }
@@ -107,8 +110,7 @@ Node *stmt();
 
 // args = expr ("," args)
 Node *args() {
-  Node *node = calloc(1, sizeof(Node));
-  node->kind = ND_ARGS;
+  Node *node = new_node(ND_ARGS);
   node->lhs = expr();
 
   if (consume(",")) {
@@ -130,8 +132,7 @@ Node *primary() {
   if (tok) {
     if (consume("(")) {
       // Function call.
-      Node *node = calloc(1, sizeof(Node));
-      node->kind = ND_CALL;
+      Node *node = new_node(ND_CALL);
       node->name = tok->str;
       node->len = tok->len;
       if (tok->len > 32) {
@@ -149,8 +150,7 @@ Node *primary() {
     }
 
     // Local variable.
-    Node *node = calloc(1, sizeof(Node));
-    node->kind = ND_LVAR;
+    Node *node = new_node(ND_LVAR);
 
     LVar *lvar = find_lvar(tok);
     if (!lvar) {
@@ -271,8 +271,7 @@ Node *stmt() {
   Node *node;
 
   if (consume("{")) {
-    node = calloc(1, sizeof(Node));
-    node->kind = ND_BLOCK;
+    node = new_node(ND_BLOCK);
 
     Node head;
     head.next = NULL;
@@ -286,16 +285,14 @@ Node *stmt() {
   }
   
   if (consume("return")) {
-    node = calloc(1, sizeof(Node));
-    node->kind = ND_RETURN;
+    node = new_node(ND_RETURN);
     node->lhs = expr();
     expect(";");
     return node;
   }
   
   if (consume("if")) {
-    node = calloc(1, sizeof(Node));
-    node->kind = ND_IF;
+    node = new_node(ND_IF);
     expect("(");
     node->cond = expr();
     expect(")");
@@ -307,8 +304,7 @@ Node *stmt() {
   }
 
   if (consume("while")) {
-    node = calloc(1, sizeof(Node));
-    node->kind = ND_WHILE;
+    node = new_node(ND_WHILE);
     expect("(");
     node->cond = expr();
     expect(")");
@@ -317,8 +313,7 @@ Node *stmt() {
   }
 
   if (consume("for")) {
-    node = calloc(1, sizeof(Node));
-    node->kind = ND_FOR;
+    node = new_node(ND_FOR);
     expect("(");
     if (!consume(";")) {
       node->init = expr();
