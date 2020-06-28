@@ -18,14 +18,6 @@ void gen_lval(Node *node) {
   printf("  push rax\n");
 }
 
-int gen_args(Node *node) {
-  if (!node) {
-    return 0;
-  }
-  gen_node(node->lhs);
-  return gen_args(node->rhs) + 1;
-}
-
 void gen_node(Node *node) {
   if (!node) {
     return;
@@ -99,10 +91,16 @@ void gen_node(Node *node) {
     printf(".Lendfor%d:\n", c);
     return;
   case ND_CALL: {
-    int args = gen_args(node->lhs);
-    for (int i = args - 1; i >= 0; i--) {
+    int arg_num = 0;
+    for (Node *arg = node->lhs; arg; arg = arg->next) {
+      gen_node(arg);
+      arg_num++;
+    }
+
+    for (int i = arg_num - 1; i >= 0; i--) {
       printf("  pop %s\n", arg_registers[i]);
     }
+
     char name[33]; // funcname is shorter than 33 chars.
     strncpy(name, node->name, node->len);
     name[node->len] = '\0';

@@ -51,7 +51,6 @@ typedef enum {
   ND_FOR,     // for
   ND_BLOCK,   // block
   ND_CALL,    // function call
-  ND_ARGS,    // arguments
 } NodeKind;
 
 typedef struct Node Node;

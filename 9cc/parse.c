@@ -107,21 +107,22 @@ Node *new_num(int val) {
 
 Node *expr();
 Node *stmt();
+Node *assign();
 
-// args = expr ("," args)
-Node *args() {
-  Node *node = new_node(ND_ARGS);
-  node->lhs = expr();
-
-  if (consume(",")) {
-    node->rhs = args();
+// func-args = assign ("," assign)*
+Node *func_args() {
+  Node *head = assign();
+  Node *cur = head;
+  while(consume(",")) {
+    cur->next = assign();
+    cur = cur->next;
   }
-  return node;
+  return head;
 }
 
 // primary = "(" expr ")"
 //         | num
-//         | ident ("(" args? ")")?
+//         | ident ("(" func-args? ")")?
 Node *primary() {
   if (consume("(")) {
     Node *node = expr();
@@ -144,7 +145,7 @@ Node *primary() {
         return node;
       }
 
-      node->lhs = args();
+      node->lhs = func_args();
       expect(")");
       return node;
     }
