@@ -26,3 +26,16 @@ impl Config {
         Ok(Config { query, filename })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn not_enough_arguments() {
+        let result = Config::new(&[]);
+        assert!(result.is_err());
+        let result = Config::new(&[String::from("one")]);
+        assert!(result.is_err());
+    }
+}
