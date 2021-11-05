@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "organizations",
+  "info": {
+    "name": "Organization"
+  },
+  "options": {
+    "increments": true,
+    "timestamps": true,
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "users": {
+      "via": "organization",
+      "plugin": "users-permissions",
+      "columnName": "id",
+      "collection": "user"
+    }
+  }
+}
