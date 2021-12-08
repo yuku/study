@@ -1,0 +1,13 @@
+{
+  "collectionName": "components_product_spec_dimensions",
+  "info": {
+    "displayName": "dimension",
+    "icon": "address-book"
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    }
+  }
+}

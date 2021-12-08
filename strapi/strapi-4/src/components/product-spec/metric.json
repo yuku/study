@@ -1,0 +1,13 @@
+{
+  "collectionName": "components_product_spec_metrics",
+  "info": {
+    "displayName": "Metric",
+    "icon": "ad"
+  },
+  "options": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    }
+  }
+}
