@@ -1,0 +1,32 @@
+name: cache test
+on:
+  workflow_dispatch:
+  push:
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Glob test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        id: restore
+        with:
+          path: cache/**/*_gen
+          key: cache
+      - run: |
+          set -x
+          tree
+          make
+          tree
+        working-directory: cache
