@@ -1,7 +1,8 @@
 name: cache test
 on:
-  workflow_dispatch:
   push:
+    branches:
+      - main
 
 permissions: {}
 
@@ -15,21 +16,27 @@ concurrency:
 
 jobs:
   test:
-    name: Glob test
+    name: test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: golang/hello
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
-          fetch-depth: 0
-      - uses: chetan/git-restore-mtime-action@v2
+          go-version-file: golang/hello/go.mod
+          cache: false
+
       - uses: actions/cache@v4
-        id: restore
+        id: go-cache
         with:
-          path: cache/**/*_gen
-          key: cache
-      - run: |
-          set -x
-          tree
-          make
-          tree
-        working-directory: cache
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: go-hello-${{ hashFiles('golang/hello/go.sum') }}
+          restore-keys: |
+            go-hello-
+
+      - run: go build
+      - run: ./hello
